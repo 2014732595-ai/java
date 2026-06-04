@@ -20,11 +20,20 @@ public class AdminAuthController {
 
     @PostMapping("/login")
     public Result<Map<String, String>> login(@RequestBody LoginDTO loginDTO) {
+        // 先查询用户信息（不清除密码）
         User user = userService.getUserInfo(loginDTO.getUsername());
-        if (user == null || !user.getRole().equals(1)) {
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        
+        // 验证是否为管理员
+        if (!user.getRole().equals(1)) {
             throw new BusinessException("非管理员账号，无法登录管理后台");
         }
+        
+        // 验证密码并生成 token
         String token = userService.login(loginDTO.getUsername(), loginDTO.getPassword());
+        
         Map<String, String> result = new HashMap<>();
         result.put("token", token);
         return Result.success(result);

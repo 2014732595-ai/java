@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/secondhand_trade?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -32,3 +34,10 @@ jwt:
 file:
   upload-path: ./uploads/
   access-path: /api/file/**
+
+# 验证码配置
+sms:
+  code:
+    length: 6
+    expire-minutes: 5
+    send-interval: 60

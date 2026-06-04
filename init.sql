@@ -18,16 +18,18 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    `password` VARCHAR(100) NOT NULL COMMENT '密码(BCrypt加密)',
+    `password` VARCHAR(100) NOT NULL COMMENT '密码(BCrypt 加密)',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称',
-    `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
+    `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像 URL',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
-    `role` TINYINT DEFAULT 0 COMMENT '角色(0-普通用户 1-管理员)',
-    `status` TINYINT DEFAULT 1 COMMENT '状态(0-禁用 1-正常)',
+    `phone_verified` TINYINT DEFAULT 0 COMMENT '手机号是否验证 (0-未验证 1-已验证)',
+    `role` TINYINT DEFAULT 0 COMMENT '角色 (0-普通用户 1-管理员)',
+    `status` TINYINT DEFAULT 1 COMMENT '状态 (0-禁用 1-正常)',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    KEY `idx_username` (`username`)
+    KEY `idx_username` (`username`),
+    KEY `idx_phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 商品分类表

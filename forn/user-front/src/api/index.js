@@ -1,7 +1,13 @@
 import request from '../utils/request'
 
-// 用户登录
+// 用户登录（账号密码）
 export const login = (data) => request.post('/user/auth/login', data)
+
+// 手机号验证码登录
+export const loginBySms = (data) => request.post('/user/auth/login-by-sms', data)
+
+// 发送验证码
+export const sendSmsCode = (data) => request.post('/user/auth/sms-code', data)
 
 // 用户注册
 export const register = (data) => request.post('/user/auth/register', data)
@@ -11,6 +17,9 @@ export const getUserInfo = () => request.get('/user/profile')
 
 // 更新个人信息
 export const updateProfile = (data) => request.put('/user/profile', data)
+
+// 修改密码
+export const updatePassword = (data) => request.post('/user/profile/update-password', data)
 
 // 商品列表
 export const getProducts = (params) => request.get('/user/products', { params })
