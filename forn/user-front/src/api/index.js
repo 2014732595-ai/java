@@ -21,6 +21,9 @@ export const updateProfile = (data) => request.put('/user/profile', data)
 // 修改密码
 export const updatePassword = (data) => request.post('/user/profile/update-password', data)
 
+// 修改用户名
+export const updateUsername = (data) => request.put('/user/profile/username', data)
+
 // 商品列表
 export const getProducts = (params) => request.get('/user/products', { params })
 

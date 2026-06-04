@@ -18,4 +18,8 @@ public interface UserService extends IService<User> {
     User getByPhone(String phone);
 
     void updatePassword(Long userId, String oldPassword, String newPassword);
+
+    void updateUsername(Long userId, String newUsername);
+
+    String generateNewToken(Long userId, String username, Integer role);
 }

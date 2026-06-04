@@ -17,8 +17,8 @@ USE secondhand_trade;
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    `password` VARCHAR(100) NOT NULL COMMENT '密码(BCrypt 加密)',
+    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名（可修改，3-20 位，字母、数字、下划线）',
+    `password` VARCHAR(100) NOT NULL COMMENT '密码 (明文存储)',
     `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称',
     `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像 URL',
     `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
@@ -110,11 +110,11 @@ CREATE TABLE `address` (
 -- 初始化数据
 -- ============================================
 
--- 测试用户 (密码: 123456, BCrypt加密)
+-- 测试用户 (密码：123456，明文存储)
 INSERT INTO `user` (`username`, `password`, `nickname`, `phone`, `role`, `status`) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '管理员', '13800000000', 1, 1),
-('test1', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '张三', '13800000001', 0, 1),
-('test2', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '李四', '13800000002', 0, 1);
+('admin', '123456', '管理员', '13800000000', 1, 1),
+('test1', '123456', '张三', '13800000001', 0, 1),
+('test2', '123456', '李四', '13800000002', 0, 1);
 
 -- 商品分类
 INSERT INTO `category` (`name`, `sort`) VALUES

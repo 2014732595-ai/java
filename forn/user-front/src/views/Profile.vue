@@ -9,7 +9,10 @@
             <h3>个人信息</h3>
             <el-form :model="profileForm" label-width="80px">
               <el-form-item label="用户名">
-                <el-input v-model="profileForm.username" disabled />
+                <div style="display: flex; align-items: center;">
+                  <el-input v-model="profileForm.username" disabled style="margin-right: 10px;" />
+                  <el-button type="primary" @click="showUsernameDialog">修改</el-button>
+                </div>
               </el-form-item>
               <el-form-item label="昵称">
                 <el-input v-model="profileForm.nickname" />
@@ -95,6 +98,30 @@
           <el-button type="primary" @click="savePassword" :loading="savingPassword">保存</el-button>
         </template>
       </el-dialog>
+
+      <!-- 修改用户名弹窗 -->
+      <el-dialog v-model="usernameVisible" title="修改用户名" width="500px">
+        <el-form :model="usernameForm" :rules="usernameRules" ref="usernameFormRef" label-width="100px">
+          <el-form-item label="原用户名">
+            <el-input v-model="usernameForm.oldUsername" disabled />
+          </el-form-item>
+          <el-form-item label="新用户名" prop="newUsername">
+            <el-input v-model="usernameForm.newUsername" placeholder="请输入新用户名（3-20 位，字母、数字、下划线）" />
+          </el-form-item>
+          <el-form-item>
+            <el-alert 
+              title="用户名规则"
+              type="info"
+              description="用户名长度为 3-20 位，只能包含字母、数字和下划线，且不能与他人重复。"
+              :closable="false"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="usernameVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveUsername" :loading="savingUsername">保存</el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -103,7 +130,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '../stores/user'
 import Header from '../components/Header.vue'
-import { getUserInfo, updateProfile, getAddressList, createAddress, updateAddress, deleteAddress, updatePassword } from '../api'
+import { getUserInfo, updateProfile, getAddressList, createAddress, updateAddress, deleteAddress, updatePassword, updateUsername } from '../api'
 import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
@@ -120,6 +147,15 @@ const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
   confirmPassword: ''
+})
+
+// 修改用户名相关
+const usernameVisible = ref(false)
+const usernameFormRef = ref(null)
+const savingUsername = ref(false)
+const usernameForm = reactive({
+  oldUsername: '',
+  newUsername: ''
 })
 
 // 密码验证规则
@@ -152,6 +188,25 @@ const passwordRules = {
   ],
   confirmPassword: [
     { validator: validateConfirmPassword, trigger: 'blur' }
+  ]
+}
+
+// 用户名验证规则
+const validateNewUsername = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入新用户名'))
+  } else if (value.length < 3 || value.length > 20) {
+    callback(new Error('用户名长度必须在 3-20 位之间'))
+  } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+    callback(new Error('用户名只能包含字母、数字和下划线'))
+  } else {
+    callback()
+  }
+}
+
+const usernameRules = {
+  newUsername: [
+    { validator: validateNewUsername, trigger: 'blur' }
   ]
 }
 
@@ -247,6 +302,44 @@ const removeAddress = async (id) => {
     ElMessage.success('删除成功')
     loadAddresses()
   } catch (e) {}
+}
+
+// 显示修改用户名弹窗
+const showUsernameDialog = () => {
+  // 重置表单
+  usernameForm.oldUsername = profileForm.username
+  usernameForm.newUsername = ''
+  usernameVisible.value = true
+}
+
+// 保存用户名
+const saveUsername = async () => {
+  const valid = await usernameFormRef.value.validate().catch(() => false)
+  if (!valid) return
+  
+  savingUsername.value = true
+  try {
+    const res = await updateUsername({
+      username: usernameForm.newUsername
+    })
+    ElMessage.success('用户名修改成功')
+    usernameVisible.value = false
+    
+    // 更新 Token
+    if (res.data && res.data.token) {
+      localStorage.setItem('token', res.data.token)
+    }
+    
+    // 更新本地状态
+    profileForm.username = usernameForm.newUsername
+    userStore.setInfo({ ...userStore.userInfo, username: usernameForm.newUsername })
+    // 重新加载用户信息
+    await loadProfile()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    savingUsername.value = false
+  }
 }
 
 onMounted(() => { loadProfile(); loadAddresses() })

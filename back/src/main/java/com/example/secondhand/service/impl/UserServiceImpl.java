@@ -162,4 +162,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setPassword(newPassword);
         updateById(user);
     }
+
+    @Override
+    public void updateUsername(Long userId, String newUsername) {
+        // 获取当前用户
+        User user = getById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+
+        // 验证用户名格式：3-20 位，只能包含字母、数字、下划线
+        if (newUsername == null || newUsername.trim().isEmpty()) {
+            throw new BusinessException("用户名不能为空");
+        }
+        
+        if (newUsername.length() < 3 || newUsername.length() > 20) {
+            throw new BusinessException("用户名长度必须在 3-20 位之间");
+        }
+        
+        if (!newUsername.matches("^[a-zA-Z0-9_]+$")) {
+            throw new BusinessException("用户名只能包含字母、数字和下划线");
+        }
+
+        // 检查用户名是否已被占用
+        User existingUser = userMapper.findByUsername(newUsername);
+        if (existingUser != null && !existingUser.getId().equals(userId)) {
+            throw new BusinessException("用户名已被占用");
+        }
+
+        // 更新用户名
+        user.setUsername(newUsername);
+        updateById(user);
+    }
+
+    @Override
+    public String generateNewToken(Long userId, String username, Integer role) {
+        return jwtUtil.generateToken(userId, username, role);
+    }
 }
