@@ -217,8 +217,9 @@ const loadProfile = async () => {
   try {
     const info = await getUserInfo()
     Object.assign(profileForm, info)
-    // 判断是否是首次设置密码（密码为空）
-    isFirstSetPassword.value = !info.password || info.password.trim() === ''
+    // 判断是否是首次设置密码
+    // 后端会返回：password 为 null 表示首次设置，password 为 "[HAS_PASSWORD]" 表示已有密码
+    isFirstSetPassword.value = (info.password === null || info.password === undefined || info.password === '')
   } catch (e) {}
 }
 
@@ -236,15 +237,19 @@ const showPasswordDialog = () => {
   passwordForm.oldPassword = ''
   passwordForm.newPassword = ''
   passwordForm.confirmPassword = ''
-  // 如果是首次设置密码，不验证旧密码
-  if (isFirstSetPassword.value) {
-    passwordRules.oldPassword = []
-  } else {
-    passwordRules.oldPassword = [
-      { required: true, message: '请输入原密码', trigger: 'blur' }
-    ]
-  }
-  passwordVisible.value = true
+  
+  // 重新加载用户信息，确保 isFirstSetPassword 是最新的
+  loadProfile().then(() => {
+    // 如果是首次设置密码，不验证旧密码
+    if (isFirstSetPassword.value) {
+      passwordRules.oldPassword = []
+    } else {
+      passwordRules.oldPassword = [
+        { required: true, message: '请输入原密码', trigger: 'blur' }
+      ]
+    }
+    passwordVisible.value = true
+  })
 }
 
 // 保存密码
@@ -255,11 +260,17 @@ const savePassword = async () => {
   savingPassword.value = true
   try {
     await updatePassword({
-      oldPassword: passwordForm.oldPassword,
+      oldPassword: passwordForm.oldPassword || '',
       newPassword: passwordForm.newPassword
     })
     ElMessage.success(isFirstSetPassword.value ? '密码设置成功' : '密码修改成功')
     passwordVisible.value = false
+    
+    // 清空表单
+    passwordForm.oldPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    
     // 重新加载用户信息
     await loadProfile()
   } catch (e) {
@@ -325,9 +336,9 @@ const saveUsername = async () => {
     ElMessage.success('用户名修改成功')
     usernameVisible.value = false
     
-    // 更新 Token
-    if (res.data && res.data.token) {
-      localStorage.setItem('token', res.data.token)
+    // 更新 Token（响应拦截器已经返回了 res.data，所以直接使用 res.token）
+    if (res && res.token) {
+      localStorage.setItem('token', res.token)
     }
     
     // 更新本地状态

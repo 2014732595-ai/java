@@ -23,17 +23,49 @@ public class UserProfileController {
 
     @GetMapping
     public Result<User> getProfile() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.getUserInfo(username);
-        return Result.success(user);
+        // 从认证信息中获取 userId（从 credentials 字段）
+        Object credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        Long userId = null;
+        
+        // 如果 credentials 是 Long 类型，说明存储的是 userId
+        if (credentials instanceof Long) {
+            userId = (Long) credentials;
+        }
+        // 兼容其他情况，从用户名查询
+        else {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            User tempUser = userService.getUserInfo(username);
+            userId = tempUser.getId();
+        }
+        
+        // 直接用 userId 查询，避免用户名修改后查不到
+        User dbUser = userService.getById(userId);
+        
+        // 判断是否是首次设置密码
+        boolean isFirstSetPassword = (dbUser.getPassword() == null || dbUser.getPassword().isEmpty());
+        
+        if (!isFirstSetPassword) {
+            dbUser.setPassword("[HAS_PASSWORD]");
+        }
+        
+        return Result.success(dbUser);
     }
 
     @PutMapping
     public Result<Void> updateProfile(@RequestBody User user) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.getUserInfo(username);
-        user.setId(currentUser.getId());
-        user.setUsername(username);
+        // 从认证信息中获取 userId（从 credentials 字段）
+        Object credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        Long userId = null;
+        
+        if (credentials instanceof Long) {
+            userId = (Long) credentials;
+        } else {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            User tempUser = userService.getUserInfo(username);
+            userId = tempUser.getId();
+        }
+        
+        user.setId(userId);
         userService.updateProfile(user);
         return Result.success();
     }
@@ -43,11 +75,20 @@ public class UserProfileController {
      */
     @PostMapping("/update-password")
     public Result<Void> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.getUserInfo(username);
+        // 从认证信息中获取 userId（从 credentials 字段）
+        Object credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        Long userId = null;
+        
+        if (credentials instanceof Long) {
+            userId = (Long) credentials;
+        } else {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            User tempUser = userService.getUserInfo(username);
+            userId = tempUser.getId();
+        }
         
         userService.updatePassword(
-            currentUser.getId(),
+            userId,
             request.getOldPassword(),
             request.getNewPassword()
         );
@@ -60,15 +101,25 @@ public class UserProfileController {
      */
     @PutMapping("/username")
     public Result<Map<String, String>> updateUsername(@RequestBody Map<String, String> request) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.getUserInfo(username);
+        // 从认证信息中获取 userId（从 credentials 字段）
+        Object credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        Long userId = null;
+        
+        if (credentials instanceof Long) {
+            userId = (Long) credentials;
+        } else {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            User tempUser = userService.getUserInfo(username);
+            userId = tempUser.getId();
+        }
         
         String newUsername = request.get("username");
-        userService.updateUsername(currentUser.getId(), newUsername);
+        userService.updateUsername(userId, newUsername);
         
         // 生成新的 Token
+        User user = userService.getById(userId);
         String newToken = ((com.example.secondhand.service.impl.UserServiceImpl) userService)
-            .generateNewToken(currentUser.getId(), newUsername, currentUser.getRole());
+            .generateNewToken(userId, newUsername, user.getRole());
         
         Map<String, String> result = new HashMap<>();
         result.put("token", newToken);

@@ -1,0 +1,31 @@
+# IDEA 配置
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Java 编译产物
+target/
+*.class
+*.jar
+*.war
+
+# Maven
+mvnw
+mvnw.cmd
+.mvn/
+
+# Vue/前端
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文档、笔记（可选）
+*.md

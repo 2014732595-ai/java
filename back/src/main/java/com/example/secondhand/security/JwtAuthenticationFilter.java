@@ -31,10 +31,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Claims claims = jwtUtil.parseToken(token);
                 String username = claims.getSubject();
                 Integer role = claims.get("role", Integer.class);
+                Long userId = claims.get("userId", Long.class);  // 从 Token 中获取 userId
                 String authority = role == 1 ? "ROLE_ADMIN" : "ROLE_USER";
 
+                // 使用 UsernamePasswordAuthenticationToken，把 userId 放在 credentials 中
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        username, null, Collections.singletonList(new SimpleGrantedAuthority(authority)));
+                        username,           // principal: 用户名
+                        userId,             // credentials: 存储 userId（验证后这个字段可以存储其他信息）
+                        Collections.singletonList(new SimpleGrantedAuthority(authority)));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception ignored) {
             }

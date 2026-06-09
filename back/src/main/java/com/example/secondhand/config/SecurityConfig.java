@@ -33,7 +33,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                // 允许访问的接口
+                // 允许访问的业务接口（原来的配置）
                 .antMatchers(
                         "/api/user/auth/login",
                         "/api/user/auth/login-by-sms",
@@ -45,8 +45,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/user/comments/**",
                         "/api/file/**"
                 ).permitAll()
-                // 管理端登录
+                // 管理端登录（原来的配置）
                 .antMatchers("/api/admin/auth/login").permitAll()
+                // ---------------- 新增Swagger放行路径 ----------------
+                .antMatchers(
+                        "/swagger-ui.html",       // Swagger主页面
+                        "/v2/api-docs",           // 导入ApiPost用的JSON接口文档
+                        "/swagger-resources/**",  // Swagger配置资源
+                        "/webjars/**",            // Swagger静态资源（JS/CSS）
+                        "/doc.html"               // 兼容Knife4j增强版Swagger
+                ).permitAll()
+                // --------------------------------------------------
                 // 其他接口需要认证
                 .anyRequest().authenticated()
                 .and()

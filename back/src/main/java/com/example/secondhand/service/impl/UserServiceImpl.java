@@ -67,7 +67,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setUsername("user_" + suffix);
             user.setNickname("用户" + suffix);
             user.setPhone(phone);
-            user.setPassword(""); // 设置空密码（手机号登录不需要密码）
+            user.setPassword("123"); // 设置初始密码为 123
             user.setRole(0);
             user.setStatus(1);
             user.setPhoneVerified(1);
@@ -135,14 +135,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 校验新密码格式
         if (newPassword == null || newPassword.length() < 6 || newPassword.length() > 20) {
-            throw new BusinessException("密码格式不正确，长度为 6-20 位");
+            throw new BusinessException("密码格式不正确，长度为 6-20 位数字或字母");
         }
 
         // 判断是首次设置密码还是修改密码
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+        boolean isFirstSet = (user.getPassword() == null || user.getPassword().isEmpty());
+        
+        if (isFirstSet) {
             // 首次设置密码：不需要验证旧密码
             if (oldPassword != null && !oldPassword.isEmpty()) {
-                throw new BusinessException("首次设置密码，无需输入原密码");
+                // 用户输入了旧密码，但实际是首次设置，忽略即可
             }
         } else {
             // 修改密码：需要验证旧密码（明文比较）
