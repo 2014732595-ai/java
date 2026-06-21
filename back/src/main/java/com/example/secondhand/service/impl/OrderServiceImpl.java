@@ -11,6 +11,7 @@ import com.example.secondhand.entity.Product;
 import com.example.secondhand.mapper.AddressMapper;
 import com.example.secondhand.mapper.OrdersMapper;
 import com.example.secondhand.mapper.ProductMapper;
+import com.example.secondhand.service.NotificationService;
 import com.example.secondhand.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
 
     @Autowired
     private AddressMapper addressMapper;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     @Transactional
@@ -58,6 +62,10 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
 
         product.setStatus(0);
         productMapper.updateById(product);
+
+        // 发送通知给卖家
+        notificationService.sendNotification(product.getSellerId(), "ORDER",
+                "新订单", "您有一个新订单，订单号：" + order.getOrderNo(), order.getId());
 
         return order.getId();
     }
@@ -92,5 +100,26 @@ public class OrderServiceImpl extends ServiceImpl<OrdersMapper, Orders> implemen
         }
         order.setStatus(status);
         updateById(order);
+
+        // 根据状态发通知
+        if (status == 1) {
+            notificationService.sendNotification(order.getSellerId(), "ORDER",
+                    "订单已付款", "买家已付款，请尽快发货", order.getId());
+        } else if (status == 2) {
+            notificationService.sendNotification(order.getBuyerId(), "ORDER",
+                    "订单已发货", "卖家已发货，请注意查收", order.getId());
+        } else if (status == 3) {
+            notificationService.sendNotification(order.getSellerId(), "ORDER",
+                    "订单已完成", "买家已确认收货，交易完成", order.getId());
+        } else if (status == 4) {
+            // 取消订单：恢复商品为在售状态
+            Product product = productMapper.selectById(order.getProductId());
+            if (product != null) {
+                product.setStatus(1);
+                productMapper.updateById(product);
+            }
+            notificationService.sendNotification(order.getSellerId(), "ORDER",
+                    "订单已取消", "买家已取消订单，商品已重新上架", order.getId());
+        }
     }
 }

@@ -5,13 +5,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.secondhand.common.BusinessException;
+import com.example.secondhand.entity.Category;
 import com.example.secondhand.entity.Comment;
 import com.example.secondhand.entity.Orders;
 import com.example.secondhand.entity.Product;
+import com.example.secondhand.entity.Refund;
 import com.example.secondhand.entity.User;
+import com.example.secondhand.mapper.CategoryMapper;
 import com.example.secondhand.mapper.CommentMapper;
 import com.example.secondhand.mapper.OrdersMapper;
 import com.example.secondhand.mapper.ProductMapper;
+import com.example.secondhand.mapper.RefundMapper;
 import com.example.secondhand.mapper.UserMapper;
 import com.example.secondhand.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -38,6 +41,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private CommentMapper commentMapper;
+
+    @Autowired
+    private RefundMapper refundMapper;
+
+    @Autowired
+    private CategoryMapper categoryMapper;
 
     @Override
     public IPage<User> getUserPage(String keyword, int pageNum, int pageSize) {
@@ -108,6 +117,48 @@ public class AdminServiceImpl implements AdminService {
                 .filter(amount -> amount != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         stats.put("totalAmount", totalAmount);
+
+        // 新增统计：退款数和退款率
+        long refundCount = refundMapper.selectCount(null);
+        stats.put("refundCount", refundCount);
+
+        long orderCount = ordersMapper.selectCount(null);
+        double refundRate = orderCount > 0 ? (double) refundCount / orderCount * 100 : 0;
+        stats.put("refundRate", Math.round(refundRate * 10) / 10.0);
+
+        // 近 7 天订单趋势
+        List<Map<String, Object>> orderTrend = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDateTime dayStart = LocalDateTime.now().minusDays(i).toLocalDate().atStartOfDay();
+            LocalDateTime dayEnd = dayStart.plusDays(1);
+            LambdaQueryWrapper<Orders> wrapper = new LambdaQueryWrapper<>();
+            wrapper.ge(Orders::getCreateTime, dayStart).lt(Orders::getCreateTime, dayEnd);
+            long count = ordersMapper.selectCount(wrapper);
+            Map<String, Object> dayData = new HashMap<>();
+            dayData.put("date", dayStart.toLocalDate().toString());
+            dayData.put("count", count);
+            orderTrend.add(dayData);
+        }
+        stats.put("orderTrend", orderTrend);
+
+        // 各分类商品占比
+        List<Map<String, Object>> categoryStats = new ArrayList<>();
+        LambdaQueryWrapper<Product> allProductWrapper = new LambdaQueryWrapper<>();
+        List<Product> allProducts = productMapper.selectList(allProductWrapper);
+        Map<Long, Long> categoryCountMap = new HashMap<>();
+        for (Product p : allProducts) {
+            if (p.getCategoryId() != null) {
+                categoryCountMap.merge(p.getCategoryId(), 1L, Long::sum);
+            }
+        }
+        for (Map.Entry<Long, Long> entry : categoryCountMap.entrySet()) {
+            Map<String, Object> catData = new HashMap<>();
+            Category category = categoryMapper.selectById(entry.getKey());
+            catData.put("categoryName", category != null ? category.getName() : "未知分类");
+            catData.put("count", entry.getValue());
+            categoryStats.add(catData);
+        }
+        stats.put("categoryStats", categoryStats);
 
         return stats;
     }

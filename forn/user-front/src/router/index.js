@@ -39,10 +39,34 @@ const routes = [
     meta: { title: '我的商品', requireAuth: true }
   },
   {
+    path: '/favorites',
+    name: 'Favorites',
+    component: () => import('../views/Favorites.vue'),
+    meta: { title: '我的收藏', requireAuth: true }
+  },
+  {
     path: '/my-orders',
     name: 'MyOrders',
     component: () => import('../views/MyOrders.vue'),
     meta: { title: '我的订单', requireAuth: true }
+  },
+  {
+    path: '/refunds',
+    name: 'Refunds',
+    component: () => import('../views/Refunds.vue'),
+    meta: { title: '退款记录', requireAuth: true }
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('../views/Chat.vue'),
+    meta: { title: '消息', requireAuth: true }
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('../views/Notifications.vue'),
+    meta: { title: '通知', requireAuth: true }
   },
   {
     path: '/profile',

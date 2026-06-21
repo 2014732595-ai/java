@@ -58,4 +58,30 @@ public class JwtUtil {
             return true;
         }
     }
+
+    /**
+     * 刷新 Token（无感续期）
+     * 如果 Token 未过期，生成一个新的 Token，有效期重新计算
+     */
+    public String refreshToken(String oldToken) {
+        Claims claims = parseToken(oldToken);
+        Long userId = claims.get("userId", Long.class);
+        String username = claims.getSubject();
+        Integer role = claims.get("role", Integer.class);
+        return generateToken(userId, username, role);
+    }
+
+    /**
+     * 判断 Token 是否即将过期（默认 30 分钟内过期视为即将过期）
+     */
+    public boolean isTokenExpiringSoon(String token) {
+        try {
+            Claims claims = parseToken(token);
+            Date expiration = claims.getExpiration();
+            long remaining = expiration.getTime() - System.currentTimeMillis();
+            return remaining > 0 && remaining < 30 * 60 * 1000L; // 30分钟
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

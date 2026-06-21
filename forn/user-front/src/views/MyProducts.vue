@@ -50,7 +50,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import Header from '../components/Header.vue'
-import { getMyProducts, updateProduct, deleteProduct } from '../api'
+import { getMyProducts, updateProduct, toggleProductStatus } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
@@ -95,7 +95,7 @@ const confirmEdit = async () => {
 
 const handleOffline = async (id) => {
   ElMessageBox.confirm('确定下架此商品？', '提示').then(async () => {
-    await deleteProduct(id)
+    await toggleProductStatus(id, 0)
     ElMessage.success('已下架')
     loadProducts()
   }).catch(() => {})
@@ -103,7 +103,7 @@ const handleOffline = async (id) => {
 
 const handleOnline = async (id) => {
   try {
-    await updateProduct(id, { status: 1 })
+    await toggleProductStatus(id, 1)
     ElMessage.success('已上架')
     loadProducts()
   } catch (e) {}

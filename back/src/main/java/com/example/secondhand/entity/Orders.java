@@ -26,6 +26,8 @@ public class Orders implements Serializable {
 
     private Integer status;
 
+    private Integer refundStatus;
+
     private String address;
 
     @TableField(fill = FieldFill.INSERT)

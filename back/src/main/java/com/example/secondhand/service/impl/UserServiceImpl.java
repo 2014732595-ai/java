@@ -9,10 +9,19 @@ import com.example.secondhand.security.JwtUtil;
 import com.example.secondhand.service.SmsService;
 import com.example.secondhand.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+    private static final int MAX_LOGIN_FAIL_COUNT = 5;
+    private static final int LOCK_MINUTES = 15;
+    private static final String LOGIN_FAIL_KEY_PREFIX = "login:fail:";
 
     @Autowired
     private UserMapper userMapper;
@@ -23,6 +32,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private SmsService smsService;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @Override
     public String login(String username, String password) {
         User user = userMapper.findByUsername(username);
@@ -32,11 +44,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new BusinessException("账号已被禁用");
         }
-        
-        // 明文密码验证
-        if (user.getPassword() == null || !user.getPassword().equals(password)) {
-            throw new BusinessException("密码错误");
+
+        // 检查登录失败次数
+        String failKey = LOGIN_FAIL_KEY_PREFIX + username;
+        String failCountStr = stringRedisTemplate.opsForValue().get(failKey);
+        int failCount = failCountStr != null ? Integer.parseInt(failCountStr) : 0;
+        if (failCount >= MAX_LOGIN_FAIL_COUNT) {
+            throw new BusinessException("登录失败次数过多，账号已锁定" + LOCK_MINUTES + "分钟");
         }
+
+        // BCrypt 密码验证
+        if (user.getPassword() == null || !PASSWORD_ENCODER.matches(password, user.getPassword())) {
+            // 登录失败，计数 +1
+            stringRedisTemplate.opsForValue().increment(failKey);
+            stringRedisTemplate.expire(failKey, LOCK_MINUTES, TimeUnit.MINUTES);
+            int remaining = MAX_LOGIN_FAIL_COUNT - failCount - 1;
+            if (remaining > 0) {
+                throw new BusinessException("密码错误，还剩" + remaining + "次机会");
+            } else {
+                throw new BusinessException("密码错误次数过多，账号已锁定" + LOCK_MINUTES + "分钟");
+            }
+        }
+
+        // 登录成功，清除失败计数
+        stringRedisTemplate.delete(failKey);
         return jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
     }
 
@@ -67,7 +98,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setUsername("user_" + suffix);
             user.setNickname("用户" + suffix);
             user.setPhone(phone);
-            user.setPassword("123"); // 设置初始密码为 123
+            user.setPassword(PASSWORD_ENCODER.encode("123456")); // BCrypt加密初始密码
             user.setRole(0);
             user.setStatus(1);
             user.setPhoneVerified(1);
@@ -86,7 +117,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password);  // 明文密码存储
+        user.setPassword(PASSWORD_ENCODER.encode(password));  // BCrypt加密存储
         user.setNickname(nickname);
         user.setPhone(phone);
         user.setRole(0);
@@ -147,21 +178,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 // 用户输入了旧密码，但实际是首次设置，忽略即可
             }
         } else {
-            // 修改密码：需要验证旧密码（明文比较）
+            // 修改密码：需要验证旧密码（BCrypt验证）
             if (oldPassword == null || oldPassword.isEmpty()) {
                 throw new BusinessException("请输入原密码");
             }
-            if (!user.getPassword().equals(oldPassword)) {
+            if (!PASSWORD_ENCODER.matches(oldPassword, user.getPassword())) {
                 throw new BusinessException("原密码错误");
             }
             // 检查新旧密码是否相同
-            if (newPassword.equals(user.getPassword())) {
+            if (PASSWORD_ENCODER.matches(newPassword, user.getPassword())) {
                 throw new BusinessException("新密码不能与原密码相同");
             }
         }
 
-        // 明文存储新密码
-        user.setPassword(newPassword);
+        // BCrypt加密存储新密码
+        user.setPassword(PASSWORD_ENCODER.encode(newPassword));
         updateById(user);
     }
 

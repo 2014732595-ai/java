@@ -24,5 +24,14 @@ export const getAllOrders = (params) => request.get('/admin/orders', { params })
 export const getComments = (params) => request.get('/admin/comments', { params })
 export const deleteComment = (id) => request.delete(`/admin/comments/${id}`)
 
+// 评价管理
+export const getAllReviews = (params) => request.get('/admin/reviews', { params })
+export const deleteReview = (id) => request.delete(`/admin/reviews/${id}`)
+
+// 退款管理
+export const getAllRefunds = (params) => request.get('/admin/refunds', { params })
+export const approveRefund = (id, remark) => request.put(`/admin/refunds/${id}/approve`, { remark })
+export const rejectRefund = (id, remark) => request.put(`/admin/refunds/${id}/reject`, { remark })
+
 // 数据统计
 export const getStats = () => request.get('/admin/stats')

@@ -40,6 +40,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userId,             // credentials: 存储 userId（验证后这个字段可以存储其他信息）
                         Collections.singletonList(new SimpleGrantedAuthority(authority)));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                // Token 即将过期时自动刷新，通过响应头返回新 Token
+                if (jwtUtil.isTokenExpiringSoon(token)) {
+                    String newToken = jwtUtil.refreshToken(token);
+                    response.setHeader("X-New-Token", newToken);
+                }
             } catch (Exception ignored) {
             }
         }

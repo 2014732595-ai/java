@@ -21,6 +21,12 @@
         <el-menu-item index="/comments">
           <el-icon><ChatDotRound /></el-icon><span>留言管理</span>
         </el-menu-item>
+        <el-menu-item index="/reviews">
+          <el-icon><Star /></el-icon><span>评价管理</span>
+        </el-menu-item>
+        <el-menu-item index="/refunds">
+          <el-icon><RefreshLeft /></el-icon><span>退款管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

@@ -110,7 +110,7 @@ CREATE TABLE `address` (
 -- 初始化数据
 -- ============================================
 
--- 测试用户 (密码：123456，明文存储)
+-- 测试用户 (密码：123456，明文存储，执行 change_v2.sql 后升级为 BCrypt 加密)
 INSERT INTO `user` (`username`, `password`, `nickname`, `phone`, `role`, `status`) VALUES
 ('admin', '123456', '管理员', '13800000000', 1, 1),
 ('test1', '123456', '张三', '13800000001', 0, 1),

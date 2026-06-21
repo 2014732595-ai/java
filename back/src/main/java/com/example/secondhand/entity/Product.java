@@ -32,6 +32,10 @@ public class Product implements Serializable {
 
     private Integer status;
 
+    private BigDecimal avgRating;
+
+    private Integer reviewCount;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

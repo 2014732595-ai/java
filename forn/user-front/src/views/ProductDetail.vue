@@ -28,6 +28,10 @@
           </div>
           <div class="actions" v-if="product.sellerId !== userStore.userInfo?.id">
             <el-button type="primary" size="large" @click="handleBuy">立即购买</el-button>
+            <el-button size="large" @click="contactSeller">联系卖家</el-button>
+            <el-button :type="isFav ? 'danger' : 'default'" size="large" @click="toggleFavorite">
+              {{ isFav ? '❤ 已收藏' : '♡ 收藏' }}
+            </el-button>
           </div>
           <div class="actions" v-else>
             <el-tag type="info">这是您发布的商品</el-tag>
@@ -49,6 +53,25 @@
             <div class="comment-time">{{ c.createTime }}</div>
           </div>
           <el-empty v-if="!comments.length" description="暂无留言" />
+        </div>
+      </div>
+
+      <!-- 评价区 -->
+      <div class="comments-section" style="margin-top: 20px">
+        <h3>用户评价（{{ reviewTotal }}条）</h3>
+        <div class="review-summary" v-if="product.avgRating">
+          <el-rate :model-value="Number(product.avgRating)" disabled show-score text-color="#ff9900" />
+          <span style="color: #999; margin-left: 10px">{{ product.avgRating }}分 / {{ product.reviewCount }}条评价</span>
+        </div>
+        <div class="review-list">
+          <div class="review-item" v-for="r in reviews" :key="r.id">
+            <div class="review-header">
+              <el-rate :model-value="r.rating" disabled size="small" />
+              <span class="review-time">{{ r.createTime }}</span>
+            </div>
+            <div class="review-content">{{ r.content || '该用户未填写文字评价' }}</div>
+          </div>
+          <el-empty v-if="!reviews.length" description="暂无评价" />
         </div>
       </div>
     </div>
@@ -75,7 +98,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import Header from '../components/Header.vue'
-import { getProductDetail, getCategories, getComments, createComment, createOrder, getAddressList } from '../api'
+import { getProductDetail, getCategories, getComments, createComment, createOrder, getAddressList, addFavorite, removeFavorite, checkFavorite, getProductReviews } from '../api'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -89,6 +112,9 @@ const commentContent = ref('')
 const addresses = ref([])
 const buyVisible = ref(false)
 const selectedAddressId = ref(null)
+const isFav = ref(false)
+const reviews = ref([])
+const reviewTotal = ref(0)
 
 const conditionMap = { 1: '全新', 2: '几乎全新', 3: '轻微使用', 4: '明显使用', 5: '功能正常' }
 const conditionText = (level) => conditionMap[level] || ''
@@ -108,6 +134,13 @@ const loadDetail = async () => {
   try {
     product.value = await getProductDetail(route.params.id)
     currentImage.value = images.value[0] || ''
+    // 检查是否已收藏
+    if (userStore.token) {
+      try {
+        const res = await checkFavorite(route.params.id)
+        isFav.value = res.favorite
+      } catch (e) {}
+    }
   } catch (e) {
     console.error(e)
   } finally {
@@ -121,6 +154,14 @@ const loadCategories = async () => {
 
 const loadComments = async () => {
   try { comments.value = await getComments(route.params.id) } catch (e) {}
+}
+
+const loadReviews = async () => {
+  try {
+    const res = await getProductReviews(route.params.id, { pageNum: 1, pageSize: 5 })
+    reviews.value = res.records || []
+    reviewTotal.value = res.total || 0
+  } catch (e) {}
 }
 
 const loadAddresses = async () => {
@@ -143,6 +184,28 @@ const handleBuy = async () => {
   buyVisible.value = true
 }
 
+const toggleFavorite = async () => {
+  if (!userStore.token) return router.push('/login')
+  try {
+    if (isFav.value) {
+      await removeFavorite(route.params.id)
+      isFav.value = false
+      ElMessage.success('已取消收藏')
+    } else {
+      await addFavorite(route.params.id)
+      isFav.value = true
+      ElMessage.success('收藏成功')
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const contactSeller = () => {
+  if (!userStore.token) return router.push('/login')
+  router.push({ path: '/chat', query: { userId: product.value.sellerId, productId: route.params.id } })
+}
+
 const confirmBuy = async () => {
   if (!selectedAddressId.value) return ElMessage.warning('请选择收货地址')
   try {
@@ -157,6 +220,7 @@ onMounted(() => {
   loadDetail()
   loadCategories()
   loadComments()
+  loadReviews()
 })
 </script>
 
@@ -181,4 +245,9 @@ onMounted(() => {
 .comment-user { font-weight: bold; font-size: 14px; }
 .comment-text { margin: 6px 0; color: #333; }
 .comment-time { font-size: 12px; color: #999; }
+.review-summary { margin-bottom: 15px; display: flex; align-items: center; }
+.review-item { padding: 12px 0; border-bottom: 1px solid #eee; }
+.review-header { display: flex; align-items: center; gap: 12px; }
+.review-time { font-size: 12px; color: #999; }
+.review-content { margin-top: 8px; color: #333; line-height: 1.6; }
 </style>

@@ -19,6 +19,17 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+  redis:
+    host: 192.168.9.128
+    port: 6379
+    password: 123456
+    database: 0
+    timeout: 2000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
 
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml

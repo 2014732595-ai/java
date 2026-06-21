@@ -39,6 +39,9 @@ export const updateProduct = (id, data) => request.put(`/user/products/${id}`, d
 // 下架商品
 export const deleteProduct = (id) => request.delete(`/user/products/${id}`)
 
+// 商品上下架切换
+export const toggleProductStatus = (id, status) => request.put(`/user/products/${id}/status`, { status })
+
 // 我的商品
 export const getMyProducts = (params) => request.get('/user/products/my', { params })
 
@@ -86,3 +89,32 @@ export const uploadFile = (file) => {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+// 收藏
+export const addFavorite = (productId) => request.post('/user/favorites', { productId })
+export const removeFavorite = (productId) => request.delete(`/user/favorites/${productId}`)
+export const getFavorites = (params) => request.get('/user/favorites', { params })
+export const checkFavorite = (productId) => request.get(`/user/favorites/check/${productId}`)
+
+// 评价
+export const createReview = (data) => request.post('/user/reviews', data)
+export const getProductReviews = (productId, params) => request.get(`/user/reviews/product/${productId}`, { params })
+export const getMyReviews = (params) => request.get('/user/reviews/my', { params })
+export const checkReviewed = (orderId) => request.get(`/user/reviews/check/${orderId}`)
+
+// 退款
+export const applyRefund = (data) => request.post('/user/refunds', data)
+export const getMyRefunds = (params) => request.get('/user/refunds/my', { params })
+export const cancelRefund = (id) => request.put(`/user/refunds/${id}/cancel`)
+
+// 聊天
+export const getConversations = () => request.get('/user/chat/conversations')
+export const getMessages = (userId, params) => request.get(`/user/chat/messages/${userId}`, { params })
+export const markChatRead = (fromId) => request.put(`/user/chat/read/${fromId}`)
+export const getUnreadCount = () => request.get('/user/chat/unread-count')
+
+// 通知
+export const getNotifications = (params) => request.get('/user/notifications', { params })
+export const markNotificationRead = (id) => request.put(`/user/notifications/${id}/read`)
+export const markAllNotificationsRead = () => request.put('/user/notifications/read-all')
+export const getNotificationUnreadCount = () => request.get('/user/notifications/unread-count')

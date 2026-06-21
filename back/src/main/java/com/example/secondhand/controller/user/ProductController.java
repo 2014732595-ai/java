@@ -66,6 +66,16 @@ public class ProductController {
         return Result.success();
     }
 
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public Result<Void> toggleStatus(@PathVariable Long id, @RequestBody java.util.Map<String, Integer> params) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getUserInfo(username);
+        Integer status = params.get("status");
+        productService.toggleProductStatus(id, user.getId(), status);
+        return Result.success();
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public Result<IPage<Product>> getMyProducts(

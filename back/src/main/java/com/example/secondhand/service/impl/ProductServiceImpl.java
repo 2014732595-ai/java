@@ -81,6 +81,20 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     }
 
     @Override
+    @Transactional
+    public void toggleProductStatus(Long productId, Long sellerId, Integer status) {
+        Product product = getById(productId);
+        if (product == null) {
+            throw new BusinessException("商品不存在");
+        }
+        if (!product.getSellerId().equals(sellerId)) {
+            throw new BusinessException("无权操作此商品");
+        }
+        product.setStatus(status);
+        updateById(product);
+    }
+
+    @Override
     public IPage<Product> getMyProducts(Long sellerId, int pageNum, int pageSize) {
         Page<Product> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();

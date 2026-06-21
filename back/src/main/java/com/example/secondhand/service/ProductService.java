@@ -17,5 +17,7 @@ public interface ProductService extends IService<Product> {
 
     void deleteProduct(Long productId, Long sellerId);
 
+    void toggleProductStatus(Long productId, Long sellerId, Integer status);
+
     IPage<Product> getMyProducts(Long sellerId, int pageNum, int pageSize);
 }

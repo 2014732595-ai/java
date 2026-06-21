@@ -39,14 +39,18 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/api/user/auth/login-by-sms",
                         "/api/user/auth/sms-code",
                         "/api/user/auth/register",
+                        "/api/user/auth/refresh-token",
                         "/api/user/products",
                         "/api/user/products/**",
                         "/api/user/categories",
                         "/api/user/comments/**",
+                        "/api/user/reviews/product/**",
                         "/api/file/**"
                 ).permitAll()
                 // 管理端登录（原来的配置）
                 .antMatchers("/api/admin/auth/login").permitAll()
+                // WebSocket 端点
+                .antMatchers("/ws/**").permitAll()
                 // ---------------- 新增Swagger放行路径 ----------------
                 .antMatchers(
                         "/swagger-ui.html",       // Swagger主页面
